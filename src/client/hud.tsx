@@ -50,16 +50,34 @@ export function setCinematicCameraActive(active: boolean): void {
   cinematicCameraActive = active
 }
 
-//  Audio 
-function playSound(url: string, volume: number): void {
+//  Audio
+// One persistent entity per one-shot sound. Retriggering replaces the
+// AudioSource component in place — no entities are created or removed
+// during gameplay (zero-churn doctrine).
+let pressSoundEntity: Entity = 0 as Entity
+let successSoundEntity: Entity = 0 as Entity
+
+function createSoundEntity(): Entity {
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(SCENE_CENTER.x, SCENE_CENTER.y + 1, SCENE_CENTER.z) })
-  AudioSource.create(e, { audioClipUrl: url, playing: true, loop: false, volume })
-  setTimeout(() => { try { engine.removeEntity(e) } catch (_) {} }, 3000)
+  return e
+}
+
+function playOneShot(e: Entity, url: string, volume: number): void {
+  if (e === (0 as Entity)) return
+  try {
+    AudioSource.createOrReplace(e, { audioClipUrl: url, playing: true, loop: false, volume })
+  } catch (_) {}
+}
+
+export function playSuccess(): void {
+  playOneShot(successSoundEntity, 'assets/sounds/success.mp3', 1.0)
 }
 
 function initAudio(): void {
   if (ambientEntity !== (0 as Entity)) return
+  pressSoundEntity = createSoundEntity()
+  successSoundEntity = createSoundEntity()
   ambientEntity = engine.addEntity()
   Transform.create(ambientEntity, { position: Vector3.create(SCENE_CENTER.x, SCENE_CENTER.y + 1, SCENE_CENTER.z) })
   AudioSource.create(ambientEntity, {
@@ -104,7 +122,7 @@ export function hudInputSystem(_dt: number): void {
   if (inputSystem.isTriggered(InputAction.IA_PRIMARY, PointerEventType.PET_DOWN)) {
     selectedIndex = (selectedIndex + 1) % PART_TYPES.length
     updateShoulderPiece()
-    playSound('assets/sounds/pressE.mp3', 1.0)
+    playOneShot(pressSoundEntity, 'assets/sounds/pressE.mp3', 1.0)
     dismissOnboarding()
   }
 }

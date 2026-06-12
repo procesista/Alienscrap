@@ -11,7 +11,7 @@ import {
 } from '../shared/constants'
 import { SlotDefinition, TEMPLATES, TemplateId, getTemplate } from '../shared/templates'
 import { getClientSnapshot, requestAttach, getLocalPlayerId } from './client'
-import { onWrongPart, showFeedback } from './hud'
+import { onWrongPart, showFeedback, playSuccess } from './hud'
 
 //  Slot visual registry 
 
@@ -673,6 +673,7 @@ function onSlotClick(slot: SlotDefinition): void {
   recentClicks.add(slot.slotId)
   setTimeout(() => recentClicks.delete(slot.slotId), ANTI_SPAM_MS)
   flashFeedback(slot, Color4.create(1, 1, 0.5, 1))
+  playSuccess()
 
   requestAttach(slot.slotId, selected)
 }

@@ -9,3 +9,6 @@ yarn-debug.log*
 yarn-error.log*
 .editor
 dclcontext/
+# Claude assistant local files
+.claude/
+CLAUDE.md
