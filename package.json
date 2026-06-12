@@ -9,8 +9,8 @@
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next",
     "server-logs": "npx -y @dcl/sdk-commands@7.23.4-26106700711.commit-2afa13b sdk-server-logs",
-    "server-logs:prod": "npx -y @dcl/sdk-commands@7.23.4-26106700711.commit-2afa13b sdk-server-logs --world unai.dcl.eth --position=0,0",
-    "server-logs:world": "npx -y @dcl/sdk-commands@7.23.4-26106700711.commit-2afa13b sdk-server-logs --world unai.dcl.eth"
+    "server-logs:prod": "npx -y @dcl/sdk-commands@7.23.4-26106700711.commit-2afa13b sdk-server-logs --world alienscrapyard.dcl.eth --position=0,0",
+    "server-logs:world": "npx -y @dcl/sdk-commands@7.23.4-26106700711.commit-2afa13b sdk-server-logs --world alienscrapyard.dcl.eth"
   },
   "devDependencies": {
     "@dcl/js-runtime": "7.24.0",

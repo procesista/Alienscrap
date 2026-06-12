@@ -282,7 +282,7 @@ function placeHitbox(slot: SlotDefinition): Entity {
       entity: e,
       opts: {
         button: InputAction.IA_POINTER,
-        hoverText: 'Click to place piece',
+        hoverText: 'Press E to change block',
         maxDistance: 8
       }
     },
