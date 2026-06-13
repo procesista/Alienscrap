@@ -6,7 +6,8 @@ import { Vector3, Quaternion } from '@dcl/sdk/math'
 import { ReactEcsRenderer, UiEntity, Label, ReactEcs } from '@dcl/sdk/react-ecs'
 import {
   PART_TYPES, PART_GLB, PART_LABEL, PART_SYMBOL, PartType,
-  SCENE_CENTER, PERFORMANCE_LABEL, RoundPhase
+  SCENE_CENTER, PERFORMANCE_LABEL, RoundPhase,
+  COUNTDOWN_SECONDS, PERFORMANCE_DURATION_SECONDS, RESET_DELAY_SECONDS
 } from '../shared/constants'
 import { getClientSnapshot } from './client'
 
@@ -53,6 +54,15 @@ export function dismissOnboarding(): void {
 // instead of getting black bars over first person.
 export function setCinematicCameraActive(active: boolean): void {
   cinematicCameraActive = active
+}
+
+// Total seconds left in the whole inter-round cinematic window (COUNTDOWN +
+// PERFORM + RESET), counted down as one continuous number (~7 → 0).
+function cinematicSecondsLeft(phase: RoundPhase, secondsLeftInPhase: number): number {
+  if (phase === 'COUNTDOWN') return secondsLeftInPhase + PERFORMANCE_DURATION_SECONDS + RESET_DELAY_SECONDS
+  if (phase === 'PERFORM')   return secondsLeftInPhase + RESET_DELAY_SECONDS
+  if (phase === 'RESET')     return secondsLeftInPhase
+  return 0
 }
 
 //  Audio
@@ -397,8 +407,10 @@ export function initHUD(): void {
             <Label value=' ' fontSize={6} color={{ r: 0, g: 0, b: 0, a: 0 }} uiTransform={{ width: '100%', height: 10 }} textAlign='middle-center' />
         </UiEntity>
 
-        {/* Cinematic letterbox */}
+        {/* Cinematic letterbox + countdown + effects */}
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%', display: inCinematic ? 'flex' : 'none' }}>
+
+          {/* Top + bottom letterbox bars */}
           <UiEntity
             uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: 1920, height: 140 }}
             uiBackground={{ color: { r: 0, g: 0, b: 0, a: 1 } }}
@@ -407,17 +419,85 @@ export function initHUD(): void {
             uiTransform={{ positionType: 'absolute', position: { top: 940, left: 0 }, width: 1920, height: 140 }}
             uiBackground={{ color: { r: 0, g: 0, b: 0, a: 1 } }}
           />
+
+          {/* Inner edge glow — top + bottom */}
           <UiEntity
-            uiTransform={{ positionType: 'absolute', position: { top: 380, left: 0 }, width: 1920, height: 80, alignItems: 'center', justifyContent: 'center' }}
+            uiTransform={{ positionType: 'absolute', position: { top: 136, left: 0 }, width: 1920, height: 4 }}
+            uiBackground={{ color: { r: 0.3, g: 0.6, b: 1, a: 0.5 + Math.sin(floatTime * 2.2) * 0.3 } }}
+          />
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 940, left: 0 }, width: 1920, height: 4 }}
+            uiBackground={{ color: { r: 0.3, g: 0.6, b: 1, a: 0.5 + Math.sin(floatTime * 2.2 + 1.5) * 0.3 } }}
+          />
+
+          {/* Left + right accent bars pulsing (offset phase) */}
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 140, left: 0 }, width: 4, height: 800 }}
+            uiBackground={{ color: { r: 0.3, g: 0.6, b: 1, a: Math.max(0.1, 0.4 + Math.sin(floatTime * 2.5) * 0.4) } }}
+          />
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 140, left: 1916 }, width: 4, height: 800 }}
+            uiBackground={{ color: { r: 0.3, g: 0.6, b: 1, a: Math.max(0.1, 0.4 + Math.sin(floatTime * 2.5 + Math.PI) * 0.4) } }}
+          />
+
+          {/* Moving scan line */}
+          <UiEntity
+            uiTransform={{
+              positionType: 'absolute',
+              position: { top: Math.round(140 + ((Math.sin(floatTime * 0.75) + 1) / 2) * 790), left: 0 },
+              width: 1920, height: 3
+            }}
+            uiBackground={{ color: { r: 0.5, g: 0.8, b: 1, a: 0.45 } }}
+          />
+
+          {/* "NEXT BUILD IN" label */}
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 162, left: 0 }, width: 1920, height: 58, alignItems: 'center', justifyContent: 'center' }}
           >
             <Label
-              value='NEXT ROUND'
-              fontSize={48}
-              color={{ r: 1, g: 1, b: 1, a: 1 }}
-              uiTransform={{ width: '100%', height: 80 }}
+              value='NEXT BUILD IN'
+              fontSize={26}
+              color={{ r: 0.75, g: 0.85, b: 1, a: Math.max(0.4, 0.7 + Math.sin(floatTime * 3.5) * 0.3) }}
+              uiTransform={{ width: '100%', height: 58 }}
               textAlign='middle-center'
             />
           </UiEntity>
+
+          {/* Countdown number — warm color cycle */}
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 210, left: 0 }, width: 1920, height: 200, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Label
+              value={`${Math.max(0, cinematicSecondsLeft(phase, snap.secondsLeft))}`}
+              fontSize={160}
+              color={{
+                r: Math.min(1, 0.75 + Math.sin(floatTime * 2.0) * 0.25),
+                g: Math.max(0, 0.75 + Math.sin(floatTime * 2.0 + 1.2) * 0.25),
+                b: Math.max(0, 0.1  + Math.sin(floatTime * 2.0 + 2.4) * 0.15),
+                a: 1
+              }}
+              uiTransform={{ width: '100%', height: 200 }}
+              textAlign='middle-center'
+            />
+          </UiEntity>
+
+          {/* Depleting progress bar — total cinematic time remaining */}
+          <UiEntity
+            uiTransform={{ positionType: 'absolute', position: { top: 428, left: 360 }, width: 1200, height: 5 }}
+            uiBackground={{ color: { r: 0.08, g: 0.08, b: 0.25, a: 0.7 } }}
+          >
+            <UiEntity
+              uiTransform={{
+                width: Math.round(
+                  (Math.max(0, cinematicSecondsLeft(phase, snap.secondsLeft)) /
+                  (COUNTDOWN_SECONDS + PERFORMANCE_DURATION_SECONDS + RESET_DELAY_SECONDS)) * 1200
+                ),
+                height: 5
+              }}
+              uiBackground={{ color: { r: 0.3, g: 0.65, b: 1, a: 0.85 } }}
+            />
+          </UiEntity>
+
         </UiEntity>
 
       </UiEntity>
