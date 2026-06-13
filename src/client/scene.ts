@@ -490,6 +490,7 @@ let chorePhase: RoundPhase = 'IDLE'
 let choreVariant = 0
 let choreRound = 0
 let choreActive = false
+let choreExploded = false
 
 export function cinematicAnimSystem(dt: number): void {
   const snap  = getClientSnapshot()
@@ -507,26 +508,23 @@ export function cinematicAnimSystem(dt: number): void {
 
   // Phase / round transitions.
   if (phase !== chorePhase || round !== choreRound) {
-    if (chorePhase === 'PERFORM' && phase === 'RESET') {
-      triggerExplosion()
-      hideAnimatedSolids(snap)
-      movePlayerTo({
-        newRelativePosition: RESPAWN_POSITIONS[Math.floor(Math.random() * RESPAWN_POSITIONS.length)],
-        cameraTarget: RESPAWN_LOOK_TARGET
-      }).catch(() => {})
-      choreActive = false
-    } else if (choreActive && phase !== 'COUNTDOWN' && phase !== 'PERFORM') {
+    // PERFORM→RESET: keep animating into RESET — explosion fires when secondsLeft reaches 1.
+    // Any other exit from animated phases: reset solids to base.
+    if (choreActive && phase !== 'COUNTDOWN' && phase !== 'PERFORM' && phase !== 'RESET') {
       resetAnimatedSolids(snap)
       choreActive = false
     }
 
     if (phase === 'COUNTDOWN') {
-      choreTime = 0
-      choreVariant = Math.floor(Math.random() * 2)
-      choreActive = true
-      console.log(`[CINEMATIC-ANIM] start round=${round} variant=${choreVariant === 1 ? 'ORBIT' : 'WAVE'}`)
-    } else if (phase === 'PERFORM' && !choreActive) {
-      // Late joiner missed COUNTDOWN: start animating from current positions.
+      choreExploded = false
+      if (snap.performanceType === 'PERFECT') {
+        choreTime = 0
+        choreVariant = Math.floor(Math.random() * 2)
+        choreActive = true
+        console.log(`[CINEMATIC-ANIM] start round=${round} variant=${choreVariant === 1 ? 'ORBIT' : 'WAVE'}`)
+      }
+    } else if (phase === 'PERFORM' && !choreActive && snap.performanceType === 'PERFECT') {
+      // Late joiner missed COUNTDOWN.
       choreTime = 0
       choreActive = true
     }
@@ -535,9 +533,21 @@ export function cinematicAnimSystem(dt: number): void {
     choreRound = round
   }
 
+  // Explosion fires when the big countdown hits 1 — RESET phase, secondsLeft === 1.
+  if (choreActive && phase === 'RESET' && !choreExploded && snap.secondsLeft <= 1) {
+    choreExploded = true
+    choreActive = false
+    triggerExplosion()
+    hideAnimatedSolids(snap)
+    movePlayerTo({
+      newRelativePosition: RESPAWN_POSITIONS[Math.floor(Math.random() * RESPAWN_POSITIONS.length)],
+      cameraTarget: RESPAWN_LOOK_TARGET
+    }).catch(() => {})
+  }
+
   if (explosionParticles.length > 0) updateExplosionParticles(dt)
 
-  if (!choreActive || (phase !== 'COUNTDOWN' && phase !== 'PERFORM')) return
+  if (!choreActive || (phase !== 'COUNTDOWN' && phase !== 'PERFORM' && phase !== 'RESET')) return
 
   choreTime += dt
   const slots = getTemplate(snap.templateId)

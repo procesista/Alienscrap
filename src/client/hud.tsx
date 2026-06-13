@@ -349,7 +349,7 @@ export function initHUD(): void {
               })}
             </UiEntity>
             <Label
-              value='Press E to change block'
+              value='Press <color=#00ffff><size=14>E</size></color> to change block'
               fontSize={9}
               color={{ r: 0.6, g: 0.6, b: 0.8, a: 0.85 }}
               uiTransform={{ width: '100%', height: 18 }}
@@ -375,7 +375,7 @@ export function initHUD(): void {
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            position: { top: 200, left: 480 },
+            position: { top: 280, left: 480 },
             width: 960,
             flexDirection: 'column',
             alignItems: 'center',
@@ -384,7 +384,7 @@ export function initHUD(): void {
           uiBackground={{ color: { r: 0.03, g: 0.03, b: 0.15, a: 0.95 * onboardingAlpha } }}
         >
             <Label
-              value='DECENTRALAND BUILDER'
+              value='ALIENSCRAPYARD'
               fontSize={42}
               color={{ r: 0, g: 1, b: 1, a: onboardingAlpha }}
               uiTransform={{ width: '100%', height: 60 }}
@@ -398,7 +398,7 @@ export function initHUD(): void {
               textAlign='middle-center'
             />
             <Label
-              value='Press E to change piece. Click a slot to place.'
+              value='Press <color=#00ffff><size=22>E</size></color> to change piece. Click a slot to place.'
               fontSize={16}
               color={{ r: 0.9, g: 0.9, b: 1, a: onboardingAlpha }}
               uiTransform={{ width: '100%', height: 28 }}
